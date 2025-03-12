@@ -1,4 +1,6 @@
 #include <iostream>
+#include <cmath>
+#include <algorithm>
 #include <vector>
 
 double binomialTree(int steps, double S0, double K, double r, double T, double sigma) {
