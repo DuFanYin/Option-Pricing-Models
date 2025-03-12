@@ -30,7 +30,7 @@ The following optimization techniques were applied to each model sequentially:
 - **Memory Optimization:** Rolling Storage
 
 ### 2. Trinomial Tree
-- 
+- **Memory Optimization:** Rolling Storage
 
 ### 3. Monte Carlo
 - 
