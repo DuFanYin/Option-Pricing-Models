@@ -3,8 +3,8 @@
 
 This project implements five option pricing methods that I learned from **SMU QF101**, including:  
 
-- **Binomial Tree**  
-- **Trinomial Tree**  
+- **CRR Binary Tree**  
+- **CRR Ternary Tree**  
 - **Monte Carlo Simulation**  
 - **Explicit Finite Difference**  
 - **Implicit Finite Difference**  
