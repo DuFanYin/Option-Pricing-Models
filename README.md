@@ -1,7 +1,6 @@
 # Option_Pricing
 
-
-This project implements five option pricing methods that I learned from **SMU QF101**, including:  
+This this a c++ practice project to implements the option pricing methods that I learned from **SMU QF101**, including:  
 
 - **Binomial Tree**  
 - **Trinomial Tree**  
@@ -9,7 +8,9 @@ This project implements five option pricing methods that I learned from **SMU QF
 - **Explicit Finite Difference**  
 - **Implicit Finite Difference**  
 
-Additionally, this project applies **multithreading** and **memory optimization techniques** to enhance performance.  
+Algorithems are adapeted from python code provided in class. 
+
+Additionally, this project applies **multithreading** and **memory optimization techniques** for better performance
 
 ## Comparison of Option Pricing Methods
 
@@ -27,7 +28,9 @@ Additionally, this project applies **multithreading** and **memory optimization 
 The following optimization techniques were applied to each model sequentially:
 
 ### 1. Binomial Tree
-- **Memory Optimization:** Rolling Storage
+- **Rolling Storage:** only keep two layers, O(N) space complexity
+- **Pointer Swap:** swap pointer instead of vector
+- **Pruning:** Prune leading and trainling 0 avoid uncessary calculation
 
 ### 2. Trinomial Tree
 - **Memory Optimization:** Rolling Storage
