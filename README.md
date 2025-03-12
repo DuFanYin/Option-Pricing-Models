@@ -20,3 +20,23 @@ Additionally, this project applies **multithreading** and **memory optimization 
 | **Monte Carlo Simulation**     | \(O(M)\)           | 🟢 Highly Parallelizable       | ✅ Yes (preallocated paths)            | 🔴 Heavy               | Thread Pool / Atomic Operations     |
 | **Explicit Finite Difference** | \(O(NM)\)          | 🟢 Parallelizable              | ✅ Yes (sparse grid)                   | 🟠 Moderate-High       | Lock-free or thread-safe structures |
 | **Implicit Finite Difference** | \(O(NM)\)          | 🟢 Partially Parallelizable    | ✅ Yes (tridiagonal solver)            | 🟠 Moderate-High       | Synchronization on shared data (mutex) |
+
+
+## Change Log
+
+The following optimization techniques were applied to each model sequentially:
+
+### 1. Binomial Tree
+- **Memory Optimization:** Rolling Storage
+
+### 2. Trinomial Tree
+- 
+
+### 3. Monte Carlo
+- 
+
+### 4. Implicit Finite Difference
+- 
+
+### 5. Explicit Finite Difference
+- 
