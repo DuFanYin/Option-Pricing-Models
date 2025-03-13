@@ -25,7 +25,7 @@ Additionally, this project applies **multithreading** and **memory optimization 
 
 ## Change Log
 
-The following optimization techniques were applied to each model sequentially:
+The following optimization techniques were applied to each model:
 
 ### 1. Binomial Tree
 - **Rolling Storage:** only keep two layers, O(N) space complexity

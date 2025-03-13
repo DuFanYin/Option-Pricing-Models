@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <vector>
 #include <chrono>
+#include <iomanip>  // For std::setw()
 #include <sys/resource.h>  // For memory usage (Linux/Unix)
 
 double binomialTree(int steps, double S0, double K, double r, double T, double sigma) {
@@ -32,7 +33,6 @@ double binomialTree(int steps, double S0, double K, double r, double T, double s
     return option[0][0];
 }
 
-// rolling storage
 double binomialTree_opt(int steps, double S0, double K, double r, double T, double sigma) {
     double dt = T / steps;
     double u = exp(sigma * sqrt(dt));
@@ -87,7 +87,7 @@ long getMemoryUsage() {
 }
 
 int main() {
-    int steps = 500;  // Reduce steps for easier debugging and visualization
+    int steps = 1000;  // Reduce steps for easier debugging and visualization
     double S0 = 100.0;
     double K = 100.0;
     double r = 0.05;
@@ -101,13 +101,7 @@ int main() {
     long memoryAfter = getMemoryUsage();  // Measure memory usage after function call
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
-
-    // Output results for binomialTree
-    std::cout << "Option Price (Binomial Tree): " << optionPrice << std::endl;
-    std::cout << "Execution Time (Binomial Tree): " 
-              << duration.count() * 1e6 << " microseconds" << std::endl;  // microseconds
-    std::cout << "Memory Usage (Binomial Tree): " 
-              << (memoryAfter - memoryBefore) << " KB" << std::endl;  // kilobytes
+    long memoryUsed = memoryAfter - memoryBefore;  // Memory used by binomialTree
 
     // Measure time and memory for binomialTree_opt
     start = std::chrono::high_resolution_clock::now();
@@ -115,14 +109,21 @@ int main() {
     double optionPrice_v1 = binomialTree_opt(steps, S0, K, r, T, sigma);
     memoryAfter = getMemoryUsage();  // Measure memory usage after function call
     end = std::chrono::high_resolution_clock::now();
-    duration = end - start;
+    std::chrono::duration<double> duration_v1 = end - start;
+    long memoryUsed_v1 = memoryAfter - memoryBefore;  // Memory used by binomialTree_opt
 
-    // Output results for binomialTree_opt
-    std::cout << "Option Price (Binomial Tree Optimized): " << optionPrice_v1 << std::endl;
-    std::cout << "Execution Time (Binomial Tree Optimized): " 
-              << duration.count() * 1e6 << " microseconds" << std::endl;  // microseconds
-    std::cout << "Memory Usage (Binomial Tree Optimized): " 
-              << (memoryAfter - memoryBefore) << " KB" << std::endl;  // kilobytes
+    // Calculate percentage improvements
+    double timeImprovement = ((duration.count() - duration_v1.count()) / duration.count()) * 100.0;
+    double memoryImprovement = ((memoryUsed - memoryUsed_v1) / (double)memoryUsed) * 100.0;
+
+
+    std::cout << "Option Price: " << optionPrice << " & " << optionPrice_v1 << "\n";
+
+    std::cout << "Execution Time (ms): " << duration.count() * 1e6 << " | " << duration_v1.count() * 1e6 << "\n";
+    std::cout << "Improvement: "<< timeImprovement << "\n";
+
+    std::cout << "Memory Usage (KB): " << memoryUsed << " | " << memoryUsed_v1 << "\n";
+    std::cout << "Improvement: "<< memoryImprovement << "\n";
 
     return 0;
 }
