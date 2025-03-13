@@ -1,6 +1,6 @@
 # Option_Pricing
 
-This this a c++ practice project to implements the option pricing methods that I learned from **SMU QF101**, including:  
+This this a `c++` practice project implementing the option pricing methods taught in `SMU QF101` by Dr.Z, including:  
 
 - **Binomial Tree**  
 - **Trinomial Tree**  
@@ -8,9 +8,11 @@ This this a c++ practice project to implements the option pricing methods that I
 - **Explicit Finite Difference**  
 - **Implicit Finite Difference**  
 
-Algorithems are adapeted from python code provided in class. 
+Algorithems are adapeted from lecture slide;
 
-Additionally, this project applies **multithreading** and **memory optimization techniques** for better performance
+Additionally, i will explore `multithreading` and `memory optimization` for better performance
+
+Also learn some simple `Linear Algebra`.
 
 ## Comparison of Option Pricing Methods
 
