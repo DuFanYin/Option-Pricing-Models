@@ -38,7 +38,9 @@ The following optimization techniques were applied to each model:
 - **Memory Optimization:** Rolling Storage
 
 ### 3. Monte Carlo
-- 
+- **Multithread** StockPath, OptionPath generation and backward induction, batch process. Huge performace boost.
+- **Multithread** Tread pool and smaller batch. no significant boost.
+
 
 ### 4. Implicit Finite Difference
 - 

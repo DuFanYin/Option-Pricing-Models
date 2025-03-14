@@ -4,6 +4,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <random>
+#include <thread>
 #include <chrono>
 
 // Function to solve a linear system of equations using Gaussian elimination
@@ -79,6 +80,47 @@ std::vector<double> ordinary_least_squares(const std::vector<double>& X, const s
     return solve_linear_system(A, B); // Returns {c, b, a}
 }
 
+void generatePaths(std::vector<std::vector<double>>& stockPath, std::vector<std::vector<double>>& optionPath, int startRow, int endRow,
+    double S0, double K, double r, double sigma, double dt, int steps) {
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::normal_distribution<double> dist(0.0, 1.0);
+
+    for (int j = startRow; j < endRow; ++j) {  
+        stockPath[j][0] = S0;  // First column (step 0) is the initial stock price
+        optionPath[j][0] =  std::max( K - S0, 0.0);
+
+        for (size_t i = 1; i < steps; ++i) {  // Start from step 1
+            double Z = dist(gen);  
+            double dS = (r - 0.5 * sigma * sigma) * dt + sigma * std::sqrt(dt) * Z;
+            stockPath[j][i] = stockPath[j][i - 1] * std::exp(dS);  // Use the previous step price
+            optionPath[j][i] = std::max(K - stockPath[j][i], 0.0);
+    }
+}
+}
+
+
+void processBackwardInduction(int start, int end, int i, const std::vector<std::vector<double>>& stockPath,
+    std::vector<std::vector<double>>& optionPath, std::vector<int>& p, double r, double dt,
+    std::vector<double>& x, std::vector<double>& y, std::mutex& xy_mutex) {
+
+    std::vector<double> local_x, local_y; // Thread-local storage to reduce lock contention
+
+    for (int j = start; j < end; ++j) {
+        if (optionPath[j][i] > 0) {
+            local_x.push_back(stockPath[j][i]);
+            local_y.push_back(optionPath[j][p[j]] * std::exp(-r * (p[j] - i) * dt));
+        }
+    }
+
+    // Merge local_x and local_y into shared x, y with a lock
+    {
+        std::lock_guard<std::mutex> lock(xy_mutex);
+        x.insert(x.end(), local_x.begin(), local_x.end());
+        y.insert(y.end(), local_y.begin(), local_y.end());
+    }
+}
 
 // Monte Carlo simulation for American option pricing
 double monteCarlo(int numberOfstockPath, int steps, double S0, double K, double r, double T, double sigma) {
@@ -88,57 +130,55 @@ double monteCarlo(int numberOfstockPath, int steps, double S0, double K, double 
     std::vector<std::vector<double>> optionPath(numberOfstockPath, std::vector<double>(steps+1, 0));
     std::vector<int> p(numberOfstockPath, steps); 
 
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::normal_distribution<double> dist(0.0, 1.0); 
+    int numThreads = 8;  
+    int batchSize = numberOfstockPath / numThreads;  
 
-    for (int j = 0; j < numberOfstockPath; ++j) {  
-        stockPath[j][0] = S0; // First column (step 0) is the initial stock price
-    
-        for (int i = 1; i <= steps; ++i) {  // Start from step 1
-            double Z = dist(gen);  
-            double dS = (r - 0.5 * sigma * sigma) * dt + sigma * std::sqrt(dt) * Z;
-            stockPath[j][i] = stockPath[j][i - 1] * std::exp(dS);  // Use the previous step price
-        }
+    std::vector<std::thread> threads;
+
+    // populate stock and option path
+    for (int i = 0; i < numThreads; ++i) {
+        int startRow = i * batchSize;
+        int endRow = (i == numThreads - 1) ? numberOfstockPath : startRow + batchSize;  // Last thread gets remaining rows
+        threads.emplace_back(generatePaths, std::ref(stockPath), std::ref(optionPath), startRow, endRow, S0, K, r, sigma, dt, steps);
     }
 
-    // Populate option values
-    for (int j = 0; j < numberOfstockPath; ++j) { // path   0 - 7
-        for (int i = 0; i <= steps; ++i) {        // step   0 - 3
-            optionPath[j][i] = std::max(K - stockPath[j][i], 0.0);
-        }
+    // Join threads
+    for (auto& t : threads) {
+        t.join();
     }
 
-    // Backward induction for American option pricing
-    for (int i = steps-1; i > 0; --i) {          // i is actual step index
+    std::mutex xy_mutex;
+
+    // backward induction
+    for (int i = steps - 1; i > 0; --i) {
         std::vector<double> x, y;
+        std::vector<std::thread> threads;
+        int batch_size = numberOfstockPath / 8;
 
-        // Build x and y vectors
-        for (int j = 0; j < numberOfstockPath; ++j) { // j is actual path index
-            if (optionPath[j][i] > 0) {
-                x.push_back(stockPath[j][i]);
-                y.push_back( optionPath[j][p[j]] * std::exp(-r * (p[j] - i) * dt));
-            }
+        for (int t = 0; t < 8; ++t) {
+            int start = t * batch_size;
+            int end = (t == 8 - 1) ? numberOfstockPath : start + batch_size;
+            threads.emplace_back(processBackwardInduction, start, end, i, std::cref(stockPath), std::ref(optionPath),
+                                 std::ref(p), r, dt, std::ref(x), std::ref(y), std::ref(xy_mutex));
+        }
+        
+        for (auto& thread : threads) {
+            thread.join();
         }
 
-        // Ensure that x and y are not empty before regression
-        if (x.empty() || y.empty() || x.size() != y.size()) {
-            continue; // Skip this step if there's an issue with x or y
-        }
-
+        if (x.empty() || y.empty() || x.size() != y.size()) continue;
         std::vector<double> c = ordinary_least_squares(x, y);
-        if (c.size() < 3) continue; // Ensure regression coefficients are valid
+        if (c.size() < 3) continue;
 
-        // Update stopping decision
         for (int j = 0; j < numberOfstockPath; ++j) {
             if (optionPath[j][i] > 0) {
                 double fS = c[2] * stockPath[j][i] * stockPath[j][i] + c[1] * stockPath[j][i] + c[0];
                 if (optionPath[j][i] > fS) {
-                    p[j] = i;  // Early exercise
-                } else if (p[j] > i) {  // If it was already exercised earlier, keep that decision
+                    p[j] = i;
+                } else if (p[j] > i) {
                     optionPath[j][i] = 0;
                 } else {
-                    optionPath[j][i] = optionPath[j][i + 1] * std::exp(-r * dt);  // Continue holding
+                    optionPath[j][i] = optionPath[j][i + 1] * std::exp(-r * dt);
                 }
             }
         }
@@ -166,6 +206,7 @@ int main() {
     int numberOfstockPath = 10000;
     int steps = 500;
 
+    // Run Monte Carlo simulation
     auto start = std::chrono::high_resolution_clock::now();
     double optionPrice = monteCarlo(numberOfstockPath, steps, S0, K, r, T, sigma);
     auto end = std::chrono::high_resolution_clock::now();
@@ -180,4 +221,4 @@ int main() {
 }
 
 
-// clang++ monteCarlo.cpp -o mc && ./mc
+// clang++ mc_opt.cpp -o mc && ./mc

@@ -5,4 +5,7 @@ mc
 trinomial.py
 binomial.py
 montecarlo.py
-
+mc.cpp
+explicitFDM.cpp
+implicitFDM.cpp
+monteCarlo_opt_pool.cpp
