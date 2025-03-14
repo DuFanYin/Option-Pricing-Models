@@ -1,46 +1,35 @@
 # Option_Pricing
 
-This this a `c++` practice project implementing the option pricing methods taught in `SMU QF101` by Dr.Z, including:  
+# Option Pricing Methods in C++
 
-- **Binomial Tree**  
-- **Trinomial Tree**  
-- **Monte Carlo Simulation**  
-- **Explicit Finite Difference**  
-- **Implicit Finite Difference**  
+This is a C++ practice project implementing option pricing methods taught in SMU QF101 by Dr. Z, covering:
 
-Algorithems are adapeted from lecture slide;
+- Binomial Tree
+- Trinomial Tree
+- Monte Carlo Simulation
+- Explicit Finite Difference
+- Implicit Finite Difference
 
-Additionally, i will explore `multithreading` and `memory optimization` for better performance
+The algorithms are adapted from lecture slides. While option prices converge as time steps and simulation counts increase, excessively high parameters do not necessarily improve accuracy. Some techniques may also introduce more computational overhead and complexity than actual performance gains.
 
-Also learn some simple `Linear Algebra`.
-
-## Comparison of Option Pricing Methods
-
-| **Method**                    | **Time Complexity** | **Multithreading Feasibility** | **Memory Pool Optimization Feasibility** | **Computational Cost** | **Suitable Synchronization Method** |
-|-------------------------------|--------------------|--------------------------------|----------------------------------------|-----------------------|-------------------------------------|
-| **Binomial Tree**              | \(O(N^2)\)         | 🔴 Limited                     | ✅ Yes (rolling storage)               | 🟠 Medium              | Mutex/Lock for thread-safe updates  |
-| **Trinomial Tree**             | \(O(N^2)\)         | 🔴 Limited                     | ✅ Yes (rolling storage)               | 🟠 High                | Mutex/Lock for thread-safe updates  |
-| **Monte Carlo Simulation**     | \(O(M)\)           | 🟢 Highly Parallelizable       | ✅ Yes (preallocated paths)            | 🔴 Heavy               | Thread Pool / Atomic Operations     |
-| **Explicit Finite Difference** | \(O(NM)\)          | 🟢 Parallelizable              | ✅ Yes (sparse grid)                   | 🟠 Moderate-High       | Lock-free or thread-safe structures |
-| **Implicit Finite Difference** | \(O(NM)\)          | 🟢 Partially Parallelizable    | ✅ Yes (tridiagonal solver)            | 🟠 Moderate-High       | Synchronization on shared data (mutex) |
-
+However, for learning purposes, this project explores fine-grained control over multithreading and memory management. The primary focus is on `C++ performance optimization`, `multithreading`, and `memory efficiency`.
 
 ## Change Log
 
-The following optimization techniques were applied to each model:
+The following optimization techniques were applied to each model (in sequence):
 
 ### 1. Binomial Tree
-- **Rolling Storage:** only keep two layers, O(N) space complexity
-- **Pointer Swap:** swap pointer instead of vector
-- **Pruning:** Prune leading and trainling 0 avoid uncessary calculation
+- **Rolling Storage:** Retain only two layers, achieving O(N) space complexity.
+- **Pointer Swap:** Swap pointers instead of using vectors for better performance.
+- **Pruning:** Eliminate leading and trailing zeros to avoid unnecessary calculations.
 
 ### 2. Trinomial Tree
-- **Memory Optimization:** Rolling Storage
+- **Memory Optimization:** Applied Rolling Storage to optimize memory usage.
 
-### 3. Monte Carlo
-- **Multithread** StockPath, OptionPath generation and backward induction, batch process. Huge performace boost.
-- **Multithread** Tread pool and smaller batch. no significant boost.
-
+### 3. Monte Carlo Simulation
+- **Multithreading:** Parallelized computations for StockPath, OptionPath, and backward induction, enabling batch processing. 50% speed increase compared to single-threaded execution.
+- **Thread Pool:** Utilized smaller batches to prevent the overhead of deleting and recreating 8 threads. This change had a minor impact on performance.
+- **Memory Optimization:** Stored only final and current step of the option price, reducing memory usage by 55% compared to the original approach.
 
 ### 4. Implicit Finite Difference
 - 

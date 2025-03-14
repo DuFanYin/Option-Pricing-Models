@@ -348,4 +348,4 @@ int main() {
 }
 
 
-// clang++ -pthread -o mc mcv_opt_pool.cpp && ./mc
+// clang++ -pthread -o mc monteCarlo_opt_pool.cpp && ./mc

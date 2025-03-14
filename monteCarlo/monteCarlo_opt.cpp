@@ -100,7 +100,6 @@ void generatePaths(std::vector<std::vector<double>>& stockPath, std::vector<std:
 }
 }
 
-
 void processBackwardInduction(int start, int end, int i, const std::vector<std::vector<double>>& stockPath,
     std::vector<std::vector<double>>& optionPath, std::vector<int>& p, double r, double dt,
     std::vector<double>& x, std::vector<double>& y, std::mutex& xy_mutex) {
@@ -221,4 +220,4 @@ int main() {
 }
 
 
-// clang++ mc_opt.cpp -o mc && ./mc
+// clang++ monteCarlo_opt.cpp -o mc && ./mc
