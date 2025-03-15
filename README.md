@@ -1,5 +1,3 @@
-# Option_Pricing
-
 # Option Pricing Methods in C++
 
 This is a C++ practice project implementing option pricing methods taught in SMU QF101 by Dr. Z, covering:
@@ -27,10 +25,17 @@ The following optimization techniques were applied to each model (in sequence):
 - **Memory Optimization:** Applied Rolling Storage to optimize memory usage.
 
 ### 3. Monte Carlo Simulation
-- **Multithreading:** Parallelized computations for StockPath, OptionPath, and backward induction, enabling batch processing. 50% speed increase compared to single-threaded execution.
-- **Thread Pool:** Utilized smaller batches to prevent the overhead of deleting and recreating 8 threads. This change had a minor impact on performance.
-- **Memory Optimization:** Stored only final and current step of the option price, reducing memory usage by 55% compared to the original approach.
-- **Memory Optimization:** Malloc for manual mem allocation. Reduce container overhead, 10% speed boost.
+#### **Combined Results:** At 20,000 paths and 2,000 paths setting, reduced memory usage by 50% and execution time by 85%.
+
+- **Multithreading:** Parallelized computations for populating paths, and backward induction, enabling batch processing. Resulted in a 50% speed increase.
+- **Batching:** Task type does not benefit from smaller batches. Set the number of batches equal to the thread number.
+- **Thread Pool:** Prevent the overhead of deleting and recreating 8 threads. This change had a minor impact on performance.
+- **Memory Optimization:** Stored only the final and current step of the option price, reducing memory usage by 55% compared to the original approach.
+- **Memory Optimization:** Manual memory allocation, reducing container overhead resulted a 10% speed boost.
+- **Memory Optimization:** Used raw pointers for parameter passing, but saw no significant performance boost.
+
+
+- **Combined Results:** For 20000 paths and 2000 paths, reduced memory usage by 50%, excution time by 85%.
 
 ### 4. Implicit Finite Difference
 - 

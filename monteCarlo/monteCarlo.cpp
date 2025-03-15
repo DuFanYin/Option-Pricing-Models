@@ -88,18 +88,18 @@ std::vector<double> ordinary_least_squares(const std::vector<double>& X, const s
 
 
 // Monte Carlo simulation for American option pricing
-double monteCarlo(int numberOfstockPath, int steps, double S0, double K, double r, double T, double sigma) {
+double monteCarlo(int numberOfStockPath, int steps, double S0, double K, double r, double T, double sigma) {
     double dt = T / steps;
 
-    std::vector<std::vector<double>> stockPath(numberOfstockPath, std::vector<double>(steps+1, 0));
-    std::vector<std::vector<double>> optionPath(numberOfstockPath, std::vector<double>(steps+1, 0));
-    std::vector<int> p(numberOfstockPath, steps); 
+    std::vector<std::vector<double>> stockPath(numberOfStockPath, std::vector<double>(steps+1, 0));
+    std::vector<std::vector<double>> optionPath(numberOfStockPath, std::vector<double>(steps+1, 0));
+    std::vector<int> p(numberOfStockPath, steps); 
 
     std::random_device rd;
     std::mt19937 gen(rd());
     std::normal_distribution<double> dist(0.0, 1.0); 
 
-    for (int j = 0; j < numberOfstockPath; ++j) {  
+    for (int j = 0; j < numberOfStockPath; ++j) {  
         stockPath[j][0] = S0; // First column (step 0) is the initial stock price
     
         for (int i = 1; i <= steps; ++i) {  // Start from step 1
@@ -110,7 +110,7 @@ double monteCarlo(int numberOfstockPath, int steps, double S0, double K, double 
     }
 
     // Populate option values
-    for (int j = 0; j < numberOfstockPath; ++j) { // path   0 - 7
+    for (int j = 0; j < numberOfStockPath; ++j) { // path   0 - 7
         for (int i = 0; i <= steps; ++i) {        // step   0 - 3
             optionPath[j][i] = std::max(K - stockPath[j][i], 0.0);
         }
@@ -121,7 +121,7 @@ double monteCarlo(int numberOfstockPath, int steps, double S0, double K, double 
         std::vector<double> x, y;
 
         // Build x and y vectors
-        for (int j = 0; j < numberOfstockPath; ++j) { // j is actual path index
+        for (int j = 0; j < numberOfStockPath; ++j) { // j is actual path index
             if (optionPath[j][i] > 0) {
                 x.push_back(stockPath[j][i]);
                 y.push_back( optionPath[j][p[j]] * std::exp(-r * (p[j] - i) * dt));
@@ -137,7 +137,7 @@ double monteCarlo(int numberOfstockPath, int steps, double S0, double K, double 
         if (c.size() < 3) continue; // Ensure regression coefficients are valid
 
         // Update stopping decision
-        for (int j = 0; j < numberOfstockPath; ++j) {
+        for (int j = 0; j < numberOfStockPath; ++j) {
             if (optionPath[j][i] > 0) {
                 double fS = c[2] * stockPath[j][i] * stockPath[j][i] + c[1] * stockPath[j][i] + c[0];
                 if (optionPath[j][i] > fS) {
@@ -153,14 +153,14 @@ double monteCarlo(int numberOfstockPath, int steps, double S0, double K, double 
 
     // Compute Monte Carlo estimate of option price
     double s = 0;
-    for (int j = 0; j < numberOfstockPath; ++j) {
+    for (int j = 0; j < numberOfStockPath; ++j) {
         double discount_factor = std::exp(-r * p[j] * dt);
         double payoff = optionPath[j][p[j]];  // Directly use p[j] as the exercise time index
         s += discount_factor * payoff;
     }
 
     // Return the estimated option price
-    return s / numberOfstockPath;
+    return s / numberOfStockPath;
 }
 
 int main() {
@@ -170,13 +170,13 @@ int main() {
     double T = 1;
     double sigma = 0.4;
 
-    int numberOfstockPath = 10000;
-    int steps = 500;
+    int numberOfStockPath = 20000;
+    int steps = 2000;
 
     auto start = std::chrono::high_resolution_clock::now();
     long memoryBefore = getMemoryUsage();  // Measure memory usage before function call
 
-    double optionPrice = monteCarlo(numberOfstockPath, steps, S0, K, r, T, sigma);
+    double optionPrice = monteCarlo(numberOfStockPath, steps, S0, K, r, T, sigma);
 
     long memoryAfter = getMemoryUsage();  // Measure memory usage after function call
     auto end = std::chrono::high_resolution_clock::now();
