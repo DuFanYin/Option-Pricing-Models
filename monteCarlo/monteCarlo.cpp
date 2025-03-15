@@ -5,6 +5,13 @@
 #include <stdexcept>
 #include <random>
 #include <chrono>
+#include <sys/resource.h> 
+
+long getMemoryUsage() {
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    return usage.ru_maxrss;  // in kilobytes (on Linux/Unix)
+}
 
 // Function to solve a linear system of equations using Gaussian elimination
 std::vector<double> solve_linear_system(std::vector<std::vector<double>> A, std::vector<double> B) {
@@ -167,14 +174,21 @@ int main() {
     int steps = 500;
 
     auto start = std::chrono::high_resolution_clock::now();
+    long memoryBefore = getMemoryUsage();  // Measure memory usage before function call
+
     double optionPrice = monteCarlo(numberOfstockPath, steps, S0, K, r, T, sigma);
+
+    long memoryAfter = getMemoryUsage();  // Measure memory usage after function call
     auto end = std::chrono::high_resolution_clock::now();
+
     std::chrono::duration<double> duration = end - start;
+    long memoryUsed = memoryAfter - memoryBefore;  // Memory used by binomialTree
 
 
     // Output the estimated option price
     std::cout << "Estimated Option Price: " << optionPrice << std::endl;
     std::cout << "Execution Time (ms): " << duration.count() * 1e6 << std::endl;
+    std::cout << "Memory Usage (MB): " << memoryUsed / 1024 << "\n";
 
     return 0;
 }

@@ -5,6 +5,13 @@
 #include <stdexcept>
 #include <random>
 #include <chrono>
+#include <sys/resource.h> 
+
+long getMemoryUsage() {
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    return usage.ru_maxrss;  // in kilobytes (on Linux/Unix)
+}
 
 // Function to solve a linear system of equations using Gaussian elimination
 std::vector<double> solve_linear_system(std::vector<std::vector<double>> A, std::vector<double> B) {
@@ -80,78 +87,94 @@ std::vector<double> ordinary_least_squares(const std::vector<double>& X, const s
 }
 
 
-// Monte Carlo simulation for American option pricing
-double monteCarlo(int numberOfstockPath, int steps, double S0, double K, double r, double T, double sigma) {
+double monteCarlo(int numberOfStockPath, int steps, double S0, double K, double r, double T, double sigma) {
     double dt = T / steps;
 
-    std::vector<std::vector<double>> stockPath(numberOfstockPath, std::vector<double>(steps+1, 0));
-    std::vector<double> optionPath(numberOfstockPath, 0);
-    std::vector<int> p(numberOfstockPath, steps); 
+    // Dynamically allocate memory using malloc for stockPath
+    double** stockPath = (double**)malloc(numberOfStockPath * sizeof(double*));
+    for (int i = 0; i < numberOfStockPath; ++i) {
+        stockPath[i] = (double*)malloc((steps + 1) * sizeof(double));  // Each row is a vector of doubles
+    }
+
+    // Dynamically allocate memory for optionPath and p
+    double* optionPath = (double*)malloc(numberOfStockPath * sizeof(double));
+    int* p = (int*)malloc(numberOfStockPath * sizeof(int));
 
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::normal_distribution<double> dist(0.0, 1.0); 
+    std::normal_distribution<double> dist(0.0, 1.0);
 
-    for (int j = 0; j < numberOfstockPath; ++j) {  
-        stockPath[j][0] = S0; // First column (step 0) is the initial stock price
-    
-        for (int i = 1; i <= steps; ++i) {  // Start from step 1
+    // Simulate stock paths
+    for (int j = 0; j < numberOfStockPath; ++j) {  
+        stockPath[j][0] = S0; 
+
+        for (int i = 1; i <= steps; ++i) {  
             double Z = dist(gen);  
             double dS = (r - 0.5 * sigma * sigma) * dt + sigma * std::sqrt(dt) * Z;
-            stockPath[j][i] = stockPath[j][i - 1] * std::exp(dS);  // Use the previous step price
+            stockPath[j][i] = stockPath[j][i - 1] * std::exp(dS);  
         }
     }
 
-    // Populate option values
-    for (int j = 0; j < numberOfstockPath; ++j) { // path   0 - 7   // step   0 - 3
+    // Calculate option path values
+    for (int j = 0; j < numberOfStockPath; ++j) { 
         optionPath[j] = std::max(K - stockPath[j][steps], 0.0);
-        
     }
 
-    // Backward induction for American option pricing
-    for (int i = steps - 1; i > 0; --i) { // i is actual step index
+    // Backward induction for option pricing
+    for (int i = steps - 1; i > 0; --i) { 
         std::vector<double> x, y;
-        std::vector<double> optionPriceatStep(numberOfstockPath, 0.0);
+        double* optionPriceAtStep = (double*)malloc(numberOfStockPath * sizeof(double)); // Dynamically allocate memory for option prices
 
-        // Build x and y vectors
-        for (int j = 0; j < numberOfstockPath; ++j) { // j is actual path index
-            optionPriceatStep[j] = std::max(K - stockPath[j][i], 0.0);
-            if (optionPriceatStep[j] > 0) {
+        for (int j = 0; j < numberOfStockPath; ++j) { 
+            optionPriceAtStep[j] = std::max(K - stockPath[j][i], 0.0);
+            if (optionPriceAtStep[j] > 0) {
                 x.push_back(stockPath[j][i]);
                 y.push_back(optionPath[j] * std::exp(-r * (p[j] - i) * dt));
             }
         }
 
-        // Ensure that x and y are not empty before regression
         if (x.empty() || y.empty() || x.size() != y.size()) {
-            continue; // Skip this step if there's an issue with x or y
+            free(optionPriceAtStep); // Cleanup memory for optionPriceAtStep
+            continue; 
         }
 
+        // Perform ordinary least squares regression
         std::vector<double> c = ordinary_least_squares(x, y);
-        if (c.size() < 3) continue; // Ensure regression coefficients are valid
+        if (c.size() < 3) {
+            free(optionPriceAtStep); // Cleanup memory for optionPriceAtStep
+            continue;
+        }
 
-        // Update stopping decision
-        for (int j = 0; j < numberOfstockPath; ++j) {
-            if (optionPriceatStep[j] > 0) {
+        for (int j = 0; j < numberOfStockPath; ++j) {
+            if (optionPriceAtStep[j] > 0) {
                 double fS = c[2] * stockPath[j][i] * stockPath[j][i] + c[1] * stockPath[j][i] + c[0];
-                if (optionPriceatStep[j] > fS) {
-                    p[j] = i;  // Early exercise
-                    optionPath[j] = optionPriceatStep[j];
+                if (optionPriceAtStep[j] > fS) {
+                    p[j] = i;  
+                    optionPath[j] = optionPriceAtStep[j];
                 }
             }
         }
+
+        free(optionPriceAtStep); // Cleanup memory for optionPriceAtStep
     }
 
-    // Compute Monte Carlo estimate of option price
+    // Calculate the final option price
     double s = 0;
-    for (int j = 0; j < numberOfstockPath; ++j) {
+    for (int j = 0; j < numberOfStockPath; ++j) {
         double discount_factor = std::exp(-r * p[j] * dt);
-        double payoff = optionPath[j];  // Directly use p[j] as the exercise time index
+        double payoff = optionPath[j];  
         s += discount_factor * payoff;
     }
 
-    // Return the estimated option price
-    return s / numberOfstockPath;
+    // Free dynamically allocated memory
+    for (int i = 0; i < numberOfStockPath; ++i) {
+        free(stockPath[i]);  // Free each row
+    }
+    free(stockPath);  // Free the main array
+    free(optionPath);  // Free the optionPath array
+    free(p);  // Free the p array
+
+    return s / numberOfStockPath;
 }
 
 int main() {
@@ -161,21 +184,26 @@ int main() {
     double T = 1;
     double sigma = 0.4;
 
-    int numberOfstockPath = 10000;
+    int numberOfStockPath = 10000;
     int steps = 500;
 
     auto start = std::chrono::high_resolution_clock::now();
-    double optionPrice = monteCarlo(numberOfstockPath, steps, S0, K, r, T, sigma);
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = end - start;
+    long memoryBefore = getMemoryUsage();  // Measure memory usage before function call
 
+    double optionPrice = monteCarlo(numberOfStockPath, steps, S0, K, r, T, sigma);
+
+    long memoryAfter = getMemoryUsage();  // Measure memory usage after function call
+    auto end = std::chrono::high_resolution_clock::now();
+
+    std::chrono::duration<double> duration = end - start;
+    long memoryUsed = memoryAfter - memoryBefore;  // Memory used by monteCarlo
 
     // Output the estimated option price
     std::cout << "Estimated Option Price: " << optionPrice << std::endl;
     std::cout << "Execution Time (ms): " << duration.count() * 1e6 << std::endl;
+    std::cout << "Memory Usage (MB): " << memoryUsed / 1024 << "\n";
 
     return 0;
 }
-
 
 // clang++ monteCarlo_mem.cpp -o mc && ./mc

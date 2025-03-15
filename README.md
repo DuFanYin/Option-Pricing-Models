@@ -30,6 +30,7 @@ The following optimization techniques were applied to each model (in sequence):
 - **Multithreading:** Parallelized computations for StockPath, OptionPath, and backward induction, enabling batch processing. 50% speed increase compared to single-threaded execution.
 - **Thread Pool:** Utilized smaller batches to prevent the overhead of deleting and recreating 8 threads. This change had a minor impact on performance.
 - **Memory Optimization:** Stored only final and current step of the option price, reducing memory usage by 55% compared to the original approach.
+- **Memory Optimization:** Malloc for manual mem allocation. Reduce container overhead, 10% speed boost.
 
 ### 4. Implicit Finite Difference
 - 
