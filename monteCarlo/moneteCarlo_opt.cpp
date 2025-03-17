@@ -361,4 +361,4 @@ int main() {
     return 0;
 }
 
-// clang++ -pthread -o opt moneteCarlo_opt.cpp && ./opt
+// clang++ -pthread -o opt moneteCarlo_opt.cpp && ./optm
