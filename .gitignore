@@ -1,15 +1,9 @@
 .vscode
-bt
-tt
-mc
-trinomial.py
-binomial.py
-montecarlo.py
-mc.cpp
-explicitFDM.cpp
-implicitFDM.cpp
+
 
 monteCarlo/monteCarlo_multi.cpp
 monteCarlo/monteCarlo_multi_mem.cpp
 monteCarlo/monteCarlo_pool_mem.cpp
 monteCarlo/monteCarlo_mem.cpp
+
+Queue
